@@ -1,0 +1,37 @@
+pool:
+  vmImage: 'Ubuntu 16.04'
+
+trigger:
+  batch: true
+  branches:
+    include: ['master']
+  
+variables:
+  buildConfiguration: 'Release'
+  workingDirectory: '$(Build.SourcesDirectory)/src'
+
+steps:
+- script: dotnet restore ./All.sln
+  displayName: Restore
+  workingDirectory: $(workingDirectory)
+
+- script: dotnet build ./All.sln --configuration $(buildConfiguration)
+  displayName: Build
+  workingDirectory: $(workingDirectory)
+
+- script: dotnet test ./Tests.sln --configuration $(buildConfiguration) --logger trx
+  displayName: Test
+  workingDirectory: $(workingDirectory)
+
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'
+
+- script: dotnet publish ./MyProject.Web --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+  displayName: Publish
+  workingDirectory: $(workingDirectory)
+  
+- task: PublishBuildArtifacts@1

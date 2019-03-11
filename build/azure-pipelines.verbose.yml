@@ -1,0 +1,41 @@
+pool:
+  vmImage: 'Ubuntu 16.04'
+
+trigger:
+  batch: true
+  branches:
+    include: ['master']
+  
+variables:
+  buildConfiguration: 'Release'
+  workingDirectory: '$(Build.SourcesDirectory)/src'
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: Restore
+  inputs:
+    command: restore
+    projects: '**/*.csproj'
+    workingDirectory: $(workingDirectory)
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: 'build' 
+    arguments: './All.sln --configuration $(buildConfiguration)'
+    workingDirectory: $(workingDirectory)
+- task: DotNetCoreCLI@2
+  displayName: Test
+  inputs:
+    command: 'test' 
+    arguments: './Tests.sln --configuration $(buildConfiguration)'
+    workingDirectory: $(workingDirectory)
+    publishTestResults: true
+- task: DotNetCoreCLI@2
+  displayName: Publish
+  inputs:
+    command: 'publish' 
+    arguments: './MyProject.Web --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    publishWebProjects: false
+    zipAfterPublish: false
+    workingDirectory: $(workingDirectory)
+- task: PublishBuildArtifacts@1
